@@ -1,6 +1,6 @@
 module github.com/Dirk007/clapper
 
-go 1.23.1
+go 1.22
 
 require github.com/stretchr/testify v1.9.0
 
