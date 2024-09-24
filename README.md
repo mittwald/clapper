@@ -50,7 +50,7 @@ the inner order of the tag does not matter at all. The given example gives comma
 - Short flags are always `-[char]` - one dash, one character
 - Long flags have to be always `--[some-string]` two dahes, longer than 1 char.
 - Boolean properties can be set to `true` if the flag is given by command line. `-f`.
-- - If a value is given to a bool parameter (`-f true`), the given string will be parsed and interpreted accordingly.
+- - Values for bools are not accepted. Defined means `true`.
 - Command line input like `--foo=bar` or `--foo bar` are interpreted as the same.
 - If the last command line parameters are assigned to a slice `--foo a b c` then all these parameters will be appended to the slice. There are no trailing parameters then.
 - - In opposite if there is a slice `--foo a b c --bar baz 1 2 3`, then the trailing parameters `1 2 3` will be returned from the `Parse`.
@@ -109,7 +109,7 @@ You may want to have a
 ```golang
 type Foo struct {
     // ...
-    ShowHelp bool `clapper:"long=help,default=false"`
+    ShowHelp bool `clapper:"long=help"`
 }
 ```
 in order to check that and display the help. But it is up to you.

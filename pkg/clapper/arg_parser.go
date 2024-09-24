@@ -98,17 +98,12 @@ func (pa *ArgsParser) Add(arg string) error {
 	return nil
 }
 
-func (pa *ArgsParser) PopTrailing(took []string) *ArgsParser {
-	if took == nil {
-		return pa
-	}
-	for _, item := range took {
+func (pa *ArgsParser) PopTrailing(took int) *ArgsParser {
+	for _ = range took {
 		if len(pa.Trailing) == 0 {
 			return pa
 		}
-		if pa.Trailing[0] == item {
-			pa.Trailing = pa.Trailing[1:]
-		}
+		pa.Trailing = pa.Trailing[1:]
 	}
 	return pa
 }

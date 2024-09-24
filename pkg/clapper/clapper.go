@@ -86,7 +86,7 @@ func trySetField(field reflect.StructField, fieldValue reflect.Value, tags map[T
 		// Ugly way to get rid of exfra short value
 		temp := valuesFor(TagShort, tags, args)
 		if temp != nil {
-			args.PopTrailing(temp)
+			args.PopTrailing(1)
 		}
 	} else {
 		values = valuesFor(TagShort, tags, args)

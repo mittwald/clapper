@@ -173,7 +173,7 @@ func TestMultiShorts(t *testing.T) {
 		A bool `clapper:"short=a"`
 		B bool `clapper:"short=b"`
 		C bool `clapper:"short=c"`
-		D bool `clapper:"short=d,default=false"`
+		D bool `clapper:"short=d"`
 	}
 
 	var foo Foo
@@ -186,6 +186,35 @@ func TestMultiShorts(t *testing.T) {
 	assert.True(t, foo.C)
 
 	assert.False(t, foo.D)
+}
+
+func TestBoolWithValue(t *testing.T) {
+	type Foo struct {
+		A bool `clapper:"short=d"`
+	}
+
+	var foo Foo
+	trailing, err := Parse(&foo, "-d", "TrUe")
+	require.NoError(t, err)
+	require.NotEmpty(t, trailing)
+
+	assert.Equal(t, "TrUe", trailing[0])
+	assert.True(t, foo.A)
+}
+
+func TestBoolPtrWithValue(t *testing.T) {
+	type Foo struct {
+		A *bool `clapper:"short=d"`
+	}
+
+	var foo Foo
+	trailing, err := Parse(&foo, "-d", "TrUe")
+	require.NoError(t, err)
+	require.NotEmpty(t, trailing)
+
+	assert.Equal(t, "TrUe", trailing[0])
+	require.NotNil(t, foo.A)
+	assert.True(t, *foo.A)
 }
 
 func TestDefaultDoesNotOverride(t *testing.T) {
