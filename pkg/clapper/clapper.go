@@ -55,6 +55,17 @@ func getValues(tag Tag, args *ArgsParser) []string {
 	return values
 }
 
+func paramName(tags map[TagType]Tag) string {
+	tag, ok := tags[TagLong]
+	if !ok {
+		tag, ok = tags[TagShort]
+		if !ok {
+			return "<unknown>"
+		}
+	}
+	return tag.Name
+}
+
 func valuesFor(tagType TagType, tags map[TagType]Tag, args *ArgsParser) []string {
 	tag, ok := tags[tagType]
 	if !ok {
@@ -97,7 +108,7 @@ func trySetField(field reflect.StructField, fieldValue reflect.Value, tags map[T
 				if isOptionalField(field) {
 					return nil
 				}
-				return ErrRequiredValueNotGiven
+				return NewMandatoryParameterError(paramName(tags))
 			}
 			values = []string{tag.Value}
 		}

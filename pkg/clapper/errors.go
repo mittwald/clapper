@@ -14,10 +14,21 @@ var (
 	ErrUnexpectedValue                 = errors.New("expected flag not value")
 	ErrFieldCanNotBeSet                = errors.New("field can't be set")
 	ErrNoFlagSpecifier                 = errors.New("no flag specified for struct field")
-	ErrRequiredValueNotGiven           = errors.New("required value not given and no default value provided")
 	ErrShortOverrideCanOnlyBeOneLetter = errors.New("short override can only be one letter")
 	ErrLongMustBeMoreThanOne           = errors.New("long name must be more than one character")
 )
+
+type MandatoryParameterError struct {
+	Name string
+}
+
+func (e MandatoryParameterError) Error() string {
+	return fmt.Sprintf("required parameter '%s' is missing and no default available", e.Name)
+}
+
+func NewMandatoryParameterError(name string) MandatoryParameterError {
+	return MandatoryParameterError{Name: name}
+}
 
 type ParseError struct {
 	error

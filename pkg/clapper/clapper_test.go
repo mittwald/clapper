@@ -114,7 +114,7 @@ func TestNoShort(t *testing.T) {
 	assert.Equal(t, 1, foo.ShortAndLong)
 
 	_, err = Parse(&foo, "-S", "1")
-	assert.ErrorIs(t, err, ErrRequiredValueNotGiven)
+	assert.ErrorIs(t, err, NewMandatoryParameterError("short-and-long"))
 }
 
 func TestNoLong(t *testing.T) {
@@ -129,7 +129,7 @@ func TestNoLong(t *testing.T) {
 	assert.Equal(t, 1, foo.ShortAndLong)
 
 	_, err = Parse(&foo, "--short-and-long", "1")
-	assert.ErrorIs(t, err, ErrRequiredValueNotGiven)
+	assert.ErrorIs(t, err, NewMandatoryParameterError("S"))
 }
 
 func TestMissingOverrideIsIgnored(t *testing.T) {
