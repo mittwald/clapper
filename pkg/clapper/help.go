@@ -55,7 +55,7 @@ func HelpItemFromTags(tags map[TagType]Tag) *HelpItem {
 	var def *string
 	var help *string
 	if shortTag, ok := tags[TagShort]; ok {
-		name := shortTag.Name
+		name := strings.ToLower(shortTag.Name)
 		if shortTag.HasValue() {
 			name = shortTag.Value
 		}
