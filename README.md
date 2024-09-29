@@ -30,7 +30,7 @@ var foo Foo
 trailing, err := clapper.Parse(&foo)
 ```
 
-the inner order of the tag does not matter at all. The given example gives command line options `-s` and `--some-value`, defaulting to value `42` if not given and prints the help test if wanted.
+the inner order of the tag does not matter at all. The given example gives command line options `-s` and `--some-value`, defaulting to value `42` if not given. `OptionalValue` is optional. 
 
 
 ## Guarantees and rules
