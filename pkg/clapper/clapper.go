@@ -92,6 +92,7 @@ func trySetField(field reflect.StructField, fieldValue reflect.Value, tags map[T
 		return ErrFieldCanNotBeSet
 	}
 
+	defaulted := false
 	values := valuesFor(TagLong, tags, args)
 	if values != nil {
 		// Ugly way to get rid of exfra short value
@@ -111,15 +112,22 @@ func trySetField(field reflect.StructField, fieldValue reflect.Value, tags map[T
 				return NewMandatoryParameterError(paramName(tags))
 			}
 			values = []string{tag.Value}
+			defaulted = true
 		}
 	}
 
 	took, err := StringReflect(field, fieldValue, values)
-	if err == nil {
-		args.PopTrailing(took)
+	if err != nil {
+		return err
 	}
 
-	return err
+	if defaulted {
+		return nil
+	}
+
+	args.PopTrailing(took)
+
+	return nil
 }
 
 func Parse[T any](target *T, rawArgs ...string) (trailing []string, err error) {

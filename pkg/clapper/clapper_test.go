@@ -202,6 +202,24 @@ func TestBoolWithValue(t *testing.T) {
 	assert.True(t, foo.A)
 }
 
+func TestStringDefaultStringMandatoryTrail(t *testing.T) {
+	type Foo struct {
+		Help    bool    `clapper:"short,long,help='Display help message"`
+		Version bool    `clapper:"short,long,help='Display version information'"`
+		Debug   bool    `clapper:"short,long,help='Enable debug mode'"`
+		Server  string  `clapper:"short,long,default='localhost:8080',help='Server to connect to'"`
+		User    string  `clapper:"short,long,help='Username for authentication'"`
+		Pass    *string `clapper:"short,long,help='Password will be used for authentication'"`
+	}
+
+	var foo Foo
+	trailing, err := Parse(&foo, "--user", "foo", "blah")
+	require.NoError(t, err)
+	require.NotEmpty(t, trailing)
+
+	assert.Equal(t, "blah", trailing[0])
+}
+
 func TestBoolPtrWithValue(t *testing.T) {
 	type Foo struct {
 		A *bool `clapper:"short=d"`
