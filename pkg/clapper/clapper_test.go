@@ -66,6 +66,18 @@ func TestShortOnly(t *testing.T) {
 	assert.Equal(t, 1, foo.ShortAndLong)
 }
 
+func TestLongAcronyms(t *testing.T) {
+	type Foo struct {
+		FooAPI int `clapper:"long"`
+	}
+
+	var foo Foo
+	trailing, err := Parse(&foo, "--foo-api", "1")
+	require.NoError(t, err)
+	assert.Empty(t, trailing)
+	assert.Equal(t, 1, foo.FooAPI)
+}
+
 func TestShortOnlyWithOverride(t *testing.T) {
 	type Foo struct {
 		ShortAndLong int `clapper:"short=s,long"`

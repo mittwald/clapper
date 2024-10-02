@@ -3,6 +3,7 @@ package clapper
 import (
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 type TagType int
@@ -79,6 +80,38 @@ func (t *Tag) HasValue() bool {
 	return t.Value != ""
 }
 
+func deriveLongName(fieldName string) string {
+	var name string
+
+	upperSequence := false
+	sequenceCount := 0
+	for i, char := range fieldName {
+		lower := unicode.ToLower(char)
+
+		newUpperSequence := unicode.IsUpper(char)
+		if newUpperSequence == upperSequence {
+			sequenceCount++
+		}
+
+		if newUpperSequence != upperSequence && i > 0 {
+			if upperSequence && sequenceCount > 1 {
+				l := len(name) - 1
+				name = name[:l] + "-" + name[l:]
+			}
+			if !upperSequence {
+				name += "-"
+			}
+			sequenceCount = 0
+		}
+
+		upperSequence = newUpperSequence
+
+		name += string(lower)
+	}
+
+	return name
+}
+
 func (t *Tag) DeriveName(fieldName string) string {
 	if t.HasValue() {
 		if t.Type == TagShort {
@@ -91,14 +124,7 @@ func (t *Tag) DeriveName(fieldName string) string {
 		return fieldName[:1]
 	}
 
-	var name string
-	for i, char := range fieldName {
-		lower := rune(strings.ToLower(string(char))[0])
-		if char != lower && i != 0 && i != len(fieldName)-1 {
-			name += "-"
-		}
-		name += string(lower)
-	}
+	name := deriveLongName(fieldName)
 
 	return name
 }
