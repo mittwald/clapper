@@ -8,9 +8,16 @@ A more complete command line parser with optionals, tagged-defaults and auto-hel
 
 A lot. Like pointer receivers (optionals), defaults, auto-help, etc. I know that clap originally deals with defaults by assigning them inside the struct on init. It did not like it. However, I liked clap as a command line parser but was missing some of these features and the pre-defined order so I always struggled with it.
 
-## Completeness
+## Maturity
 
-This is a weekend-project at the moment with some beer aside. I am optimistic that most of the stuff works.  But expect bugs and some unimplemented or unexpected behaviour until v1.0.0 is released. Expectations could be assured from the [argument-parser](./pkg/clapper/arg_parser_test.go)- and [interpreter](./pkg/clapper/clapper_test.go) tests which are not exhaustive but a good base yet.
+**NOTE** with version 1.0.0 this package must be included like
+```golang
+import "github.com/Dirk007/clapper"
+```
+
+the `pkg/clapper`-Path has been removed.
+
+Expectations could be assured from the [argument-parser](./pkg/clapper/arg_parser_test.go)- and [interpreter](./pkg/clapper/clapper_test.go) tests which are nopefully exhautive enough.
 
 If you find a bug feel free to add a test and file a PR.
 
@@ -19,7 +26,10 @@ If you find a bug feel free to add a test and file a PR.
 Define your clapper-tag like this: 
 ```golang
 type Foo struct {
+
+    // gets --some-defaulted-value - or -s
     SomeDefaultedValue int     `clapper:"short,long,default=42,help='Set this to have some value here instead of 42'"`
+    // getsd
     OptionalValue      *string `clapper:"long"`
     MandatoryValue     string  `clapper:"long`
     FlagValueOptional  bool    `clapper:"short`
