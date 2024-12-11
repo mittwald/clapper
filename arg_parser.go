@@ -99,7 +99,7 @@ func (pa *ArgsParser) Add(arg string) error {
 }
 
 func (pa *ArgsParser) PopTrailing(took int) *ArgsParser {
-	for _ = range took {
+	for range took {
 		if len(pa.Trailing) == 0 {
 			return pa
 		}
