@@ -27,12 +27,15 @@ Define your clapper-tag like this:
 ```golang
 type Foo struct {
 
-    // gets --some-defaulted-value - or -s
+    // evaluates --some-defaulted-value - or -s. If not given, default applies.
     SomeDefaultedValue int     `clapper:"short,long,default=42,help='Set this to have some value here instead of 42'"`
-    // getsd
+    // evaluates only --optional-value as `short` is not given. If not given, the value is nil.
     OptionalValue      *string `clapper:"long"`
+    // this values has to be given or the `Parse()` will fail.
     MandatoryValue     string  `clapper:"long`
+    // bool value will be `false` if not given, or `true` if -f is given.
     FlagValueOptional  bool    `clapper:"short`
+    // unevaluated value as there is no `clapper`-Tag.
     IgnoredValue       bool
 }
 
