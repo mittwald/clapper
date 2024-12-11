@@ -130,6 +130,8 @@ func trySetField(field reflect.StructField, fieldValue reflect.Value, tags map[T
 	return nil
 }
 
+// Parse tries to evaluate the given `rawArgs` towards the provided struct `target` (which must include `clapper`-Tags).
+// If no `rawArgs` were provided, it defaults to `os.Args[1:]` (all command line arguments without the programm name).
 func Parse[T any](target *T, rawArgs ...string) (trailing []string, err error) {
 	t := reflect.TypeOf(*target)
 	if t.Kind() != reflect.Struct {
