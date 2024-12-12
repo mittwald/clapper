@@ -17,7 +17,7 @@ import "github.com/Dirk007/clapper"
 
 the `pkg/clapper`-Path has been removed.
 
-Expectations could be assured from the [argument-parser](./pkg/clapper/arg_parser_test.go)- and [interpreter](./pkg/clapper/clapper_test.go) tests which are hopefully exhautive enough.
+Expectations could be assured from the [argument-parser](./pkg/clapper/arg_parser_test.go)- and [interpreter](./pkg/clapper/clapper_test.go) tests which are hopefully exhaustive enough.
 
 If you find a bug feel free to add a test and file a PR.
 
@@ -160,7 +160,7 @@ Up from version 1.1.0 clapper supports a `command`-tag which will be filled with
 If the struct field type is a slice, all trailing arguments will be assigned to it. If the type is a single value property, only the first trailing argument will be assigned and the rest will still be returned as trailing arguments from the `Parse()` function as before.
 
 If a command is specified, it becomes mandatory and the `Parse()` will fail if no command was found (i.e. no trailing arguments found).
-If such a required command is not given, the resulting error will respect any optionally given `help` inside the tag and enrich the error message accordingly..
+If such a required command is not given, the resulting error will respect any optionally given `help` inside the tag and enrich the error message accordingly.
 
 Example:
 ```golang
