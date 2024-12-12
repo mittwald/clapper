@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/Dirk007/clapper"
 )
@@ -37,15 +38,13 @@ func main() {
 		return
 	}
 
-	fmt.Printf("Parsed config: %+v\n", config)
-	fmt.Printf("Command: %s\n", config.Command)
-
+	message := strings.Join(trailing, " ")
 	// do what we are supposed to do with the command
 	switch config.Command {
 	case "say":
-		fmt.Printf("Saying: %s\n", trailing[1:])
+		fmt.Printf("Saying: %s\n", message)
 	case "sing":
-		fmt.Printf("Singing: %s\n", trailing[1:])
+		fmt.Printf("Singing: %s\n", message)
 	default:
 		fmt.Printf("Unknown command: %s\n", config.Command)
 	}

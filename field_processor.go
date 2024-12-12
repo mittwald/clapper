@@ -75,7 +75,9 @@ func (f *StructFieldProcessor) ProcessCommand() error {
 	field := f.targetType.Field(*f.commandIndex)
 	fieldValue := f.targetValue.Field(*f.commandIndex)
 
-	_, err := StringReflect(field, fieldValue, f.args.Trailing)
+	took, err := StringReflect(field, fieldValue, f.args.Trailing)
+	f.args.PopTrailing(took)
+
 	return err
 }
 

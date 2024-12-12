@@ -450,10 +450,11 @@ func TestParsesSingleCommand(t *testing.T) {
 	}
 
 	var foo Foo
-	_, err := Parse(&foo, "-F", "hello", "this remains trailing")
+	trailing, err := Parse(&foo, "-F", "hello", "this remains", "trailing")
 	require.NoError(t, err)
 
 	assert.Equal(t, "hello", foo.Command)
+	assert.Equal(t, []string{"this remains", "trailing"}, trailing)
 }
 
 func TestParsesIntCommand(t *testing.T) {
