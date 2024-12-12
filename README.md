@@ -17,7 +17,7 @@ import "github.com/Dirk007/clapper"
 
 the `pkg/clapper`-Path has been removed.
 
-Expectations could be assured from the [argument-parser](./pkg/clapper/arg_parser_test.go)- and [interpreter](./pkg/clapper/clapper_test.go) tests which are nopefully exhautive enough.
+Expectations could be assured from the [argument-parser](./pkg/clapper/arg_parser_test.go)- and [interpreter](./pkg/clapper/clapper_test.go) tests which are hopefully exhautive enough.
 
 If you find a bug feel free to add a test and file a PR.
 
@@ -26,21 +26,46 @@ If you find a bug feel free to add a test and file a PR.
 Define your clapper-tag like this: 
 ```golang
 type Foo struct {
-
-    // gets --some-defaulted-value - or -s
-    SomeDefaultedValue int     `clapper:"short,long,default=42,help='Set this to have some value here instead of 42'"`
-    // getsd
+    // evaluates --some-defaulted-value - or -s. If not given, default applies.
+    SomeDefaultedValue int     `clapper:"short=s,long,default=42,help='Set this to have some value here instead of 42'"`
+    // evaluates only --optional-value as `short` is not given. If not given, the value is nil.
     OptionalValue      *string `clapper:"long"`
+    // this values has to be given or the `Parse()` will fail.
     MandatoryValue     string  `clapper:"long`
+    // bool value will be `false` if not given, or `true` if -F is given.
     FlagValueOptional  bool    `clapper:"short`
+    // unevaluated value as there is no `clapper`-Tag.
     IgnoredValue       bool
 }
 
+// Parse all os.Args and try to set then to `foo`
 var foo Foo
 trailing, err := clapper.Parse(&foo)
 ```
 
 the inner order of the tag does not matter at all. The given example gives command line options `-s` and `--some-value`, defaulting to value `42` if not given. `OptionalValue` is optional. 
+`FlagValueOptional` will become `true` if `-F` is given, `false` if not.
+
+
+## Changes
+
+### 1.1.0
+
+Added `command` tag to support a struct embedded command from the command line.
+Usage:
+
+```golang
+type Foo struct {
+    Help    bool   `clapper:"long"`
+    Command string `clapper:"command,help=show|hide"`
+}
+```
+
+Given an invocation like `someProgram foo bar`, `foo` will be assigned to `Command` in the Foo-struct.
+
+`command`-tags can have any supported type. This means if it has a slice type, all given trailing inputs will be assigned to the `command`-tag-value. If you have a single type, only the first trailing input will be assigned and the rest still remains as `trailing` from the `Parse()` invocation.
+
+If a required command is not given, the resulting error will respect any `help` inside the tag and enrich the error message accordingly.
 
 
 ## Guarantees and rules
@@ -64,6 +89,10 @@ the inner order of the tag does not matter at all. The given example gives comma
 - Command line input like `--foo=bar` or `--foo bar` are interpreted as the same.
 - If the last command line parameters are assigned to a slice `--foo a b c` then all these parameters will be appended to the slice. There are no trailing parameters then.
 - - In opposite if there is a slice `--foo a b c --bar baz 1 2 3`, then the trailing parameters `1 2 3` will be returned from the `Parse`.
+- Only one `command`-tag can be defined. If it is defined more than once, the `Parse()` will fail.
+- If a `command`-tag is defined, the input is mandatory.
+- A single `command`-tag target will be set with the first trailing argument.
+- A slice type `command`-tag will be set to all trailing arguments.
 
 ## Tag-Options
 
@@ -124,6 +153,24 @@ type Foo struct {
 ```
 in order to check that and display the help. But it is up to you.
 
+## command
+
+Up from version 1.1.0 clapper supports a `command`-tag which will be filled with the trailing arguments given. Only one field with `command` can be specified.
+
+If the struct field type is a slice, all trailing arguments will be assigned to it. If the type is a single value property, only the first trailing argument will be assigned and the rest will still be returned as trailing arguments from the `Parse()` function as before.
+
+If a command is specified, it becomes mandatory and the `Parse()` will fail if no command was found (i.e. no trailing arguments found).
+If such a required command is not given, the resulting error will respect any optionally given `help` inside the tag and enrich the error message accordingly..
+
+Example:
+```golang
+type Foo struct {
+    Help    bool   `clapper:"long"`
+    Command string `clapper:"command,help=show|hide"`
+}
+```
+
 ## Trailing?
 
 Clapper works different from clap and does not include `trailing` as a struct property. Trailing parameters are returned from the `Parse()` command. It is up to you to do whatever you like with them.
+Please also see the `command`-tag above.

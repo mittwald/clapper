@@ -10,6 +10,8 @@ const (
 	TagName = "clapper"
 )
 
+type ParsedTags = map[int]map[TagType]Tag
+
 func parseTags(tagItems []string, fieldName string, index int) (map[TagType]Tag, error) {
 	tags := make(map[TagType]Tag, 0)
 	for _, tagItem := range tagItems {
@@ -22,8 +24,9 @@ func parseTags(tagItems []string, fieldName string, index int) (map[TagType]Tag,
 	return tags, nil
 }
 
-func parseStructTags(t reflect.Type) (map[int]map[TagType]Tag, error) {
+func parseStructTags(t reflect.Type) (ParsedTags, error) {
 	parsedTags := make(map[int]map[TagType]Tag, 0)
+	commandTagSpecified := false
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		tagLine := field.Tag.Get(TagName)
@@ -34,6 +37,12 @@ func parseStructTags(t reflect.Type) (map[int]map[TagType]Tag, error) {
 		tags, err := parseTags(tagItems, field.Name, i)
 		if err != nil {
 			return nil, NewParseError(err, i, field.Name, tagLine)
+		}
+		if hasTagType(tags, TagCommand) {
+			if commandTagSpecified {
+				return nil, ErrDuplicateCommandTag
+			}
+			commandTagSpecified = true
 		}
 		parsedTags[i] = tags
 	}
@@ -87,7 +96,7 @@ func isOptionalField(field reflect.StructField) bool {
 	return isPointer(field) || isBool(field)
 }
 
-func trySetField(field reflect.StructField, fieldValue reflect.Value, tags map[TagType]Tag, args *ArgsParser) error {
+func trySetFieldConsumingArgs(field reflect.StructField, fieldValue reflect.Value, tags map[TagType]Tag, args *ArgsParser) error {
 	if !fieldValue.CanSet() {
 		return ErrFieldCanNotBeSet
 	}
@@ -130,6 +139,8 @@ func trySetField(field reflect.StructField, fieldValue reflect.Value, tags map[T
 	return nil
 }
 
+// Parse tries to evaluate the given `rawArgs` towards the provided struct `target` (which must include `clapper`-Tags).
+// If no `rawArgs` were provided, it defaults to `os.Args[1:]` (all command line arguments without the programm name).
 func Parse[T any](target *T, rawArgs ...string) (trailing []string, err error) {
 	t := reflect.TypeOf(*target)
 	if t.Kind() != reflect.Struct {
@@ -151,20 +162,16 @@ func Parse[T any](target *T, rawArgs ...string) (trailing []string, err error) {
 	}
 
 	reflectValue := reflect.ValueOf(target).Elem()
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		fieldValue := reflectValue.Field(i)
-
-		tags, ok := parsedTags[i]
-		if !ok {
-			continue
-		}
-
-		err = trySetField(field, fieldValue, tags, args)
-		if err != nil {
+	processor := NewStructFieldProcessor(t, reflectValue, parsedTags, args)
+	for !processor.EOF() {
+		if err = processor.Next(); err != nil {
 			return nil, err
 		}
 	}
 
-	return args.Trailing, nil
+	if err = processor.Finalize(); err != nil {
+		return nil, err
+	}
+
+	return processor.GetTrailing(), nil
 }

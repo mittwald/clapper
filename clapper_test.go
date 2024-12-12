@@ -3,6 +3,7 @@ package clapper
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -427,4 +428,93 @@ func TestNonSetBool(t *testing.T) {
 
 	assert.Empty(t, trailing)
 	assert.Equal(t, false, foo.Flag)
+}
+
+func TestParsesMultipleCommands(t *testing.T) {
+	type Foo struct {
+		Flag     bool     `clapper:"short"`
+		Commands []string `clapper:"command"`
+	}
+
+	var foo Foo
+	_, err := Parse(&foo, "-F", "hello", "world")
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"hello", "world"}, foo.Commands)
+}
+
+func TestParsesSingleCommand(t *testing.T) {
+	type Foo struct {
+		Flag    bool   `clapper:"short"`
+		Command string `clapper:"command"`
+	}
+
+	var foo Foo
+	_, err := Parse(&foo, "-F", "hello", "this remains trailing")
+	require.NoError(t, err)
+
+	assert.Equal(t, "hello", foo.Command)
+}
+
+func TestParsesIntCommand(t *testing.T) {
+	type Foo struct {
+		Flag    bool `clapper:"short"`
+		Command int  `clapper:"command"`
+	}
+
+	var foo Foo
+	_, err := Parse(&foo, "-F", "42")
+	require.NoError(t, err)
+
+	assert.Equal(t, 42, foo.Command)
+}
+
+func TestParsesIntCommandWithMalformedInput(t *testing.T) {
+	type Foo struct {
+		Flag    bool `clapper:"short"`
+		Command int  `clapper:"command"`
+	}
+
+	var foo Foo
+	_, err := Parse(&foo, "-F", "broken")
+	assert.ErrorIs(t, err, NewUnexpectedInputFormatError("broken", reflect.TypeOf(42)))
+}
+
+func TestNeedsCommand(t *testing.T) {
+	type Foo struct {
+		Flag    bool   `clapper:"short"`
+		Command string `clapper:"command"`
+	}
+
+	var foo Foo
+	_, err := Parse(&foo, "-F")
+	assert.ErrorIs(t, err, NewCommandRequiredError(""))
+}
+
+func TestNeedsCommandAndHasHelp(t *testing.T) {
+	type Foo struct {
+		Flag    bool   `clapper:"short"`
+		Command string `clapper:"command,help=show|hide"`
+	}
+
+	var foo Foo
+	_, err := Parse(&foo, "-F")
+	assert.ErrorIs(t, err, NewCommandRequiredError("show|hide"))
+	assert.Equal(t, err.Error(), "command required but no command given. Use: show|hide")
+
+	help, err := HelpDefault(&foo)
+	require.NoError(t, err)
+	assert.Contains(t, help, "Available commands: show|hide")
+}
+
+func TestMultipleCommandTagsFail(t *testing.T) {
+	type Foo struct {
+		Flag    bool   `clapper:"short"`
+		Command string `clapper:"command"`
+		Another string `clapper:"command"`
+	}
+
+	var foo Foo
+	_, err := Parse(&foo, "-F", "hello", "this remains trailing")
+	assert.ErrorIs(t, err, ErrDuplicateCommandTag)
 }

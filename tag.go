@@ -1,7 +1,6 @@
 package clapper
 
 import (
-	"fmt"
 	"strings"
 	"unicode"
 )
@@ -13,6 +12,7 @@ const (
 	TagLong
 	TagDefault
 	TagHelp
+	TagCommand
 )
 
 func GetTagType(tag string) (TagType, error) {
@@ -25,15 +25,22 @@ func GetTagType(tag string) (TagType, error) {
 		return TagDefault, nil
 	case "help":
 		return TagHelp, nil
+	case "command":
+		return TagCommand, nil
 	default:
-		return 0, fmt.Errorf("unknown tag: %s", tag)
+		return 0, NewUnknownTagTypeError(tag)
 	}
 }
 
+// Tag is one property of a struct tag.
 type Tag struct {
-	Type  TagType
-	Name  string
+	// Type of the tag.
+	Type TagType
+	// Name gets derived from the struct field name if the tag is Short or Long and is pure computational.
+	Name string
+	// Value is an optional value given to the tag if an assignment operator is given. `short=s`
 	Value string
+	// Index of the tag found in the tag line.
 	Index int
 }
 
@@ -60,17 +67,48 @@ func NewTag(tag string, fieldName string, index int) (*Tag, error) {
 	return result, result.Validate()
 }
 
-func (t *Tag) Validate() error {
-	if t.Type == TagLong {
-		if len(t.Name) <= 1 || (t.HasValue() && len(t.Value) <= 1) {
-			return ErrLongMustBeMoreThanOne
-		}
+func (t *Tag) validateShort() error {
+	if len(t.Name) > 1 || len(t.Value) > 1 {
+		return ErrShortOverrideCanOnlyBeOneLetter
 	}
+	return nil
+}
 
-	if t.Type == TagShort {
-		if len(t.Name) > 1 || len(t.Value) > 1 {
-			return ErrShortOverrideCanOnlyBeOneLetter
-		}
+func (t *Tag) validateLong() error {
+	if len(t.Name) <= 1 || (t.HasValue() && len(t.Value) <= 1) {
+		return ErrLongMustBeMoreThanOne
+	}
+	return nil
+}
+
+func (t *Tag) validateCommand() error {
+	if len(t.Value) > 0 {
+		return ErrCommandCanNotHaveValue
+	}
+	return nil
+}
+
+func (t *Tag) validateDefault() error {
+	if len(t.Value) == 0 {
+		return ErrNoDefaultValue
+	}
+	return nil
+}
+
+func (t *Tag) Validate() error {
+	switch t.Type {
+	case TagShort:
+		return t.validateShort()
+	case TagLong:
+		return t.validateLong()
+	case TagDefault:
+		return t.validateDefault()
+	case TagHelp:
+		// No validation for help tags to not introduce breaking changes ATM.
+	case TagCommand:
+		return t.validateCommand()
+	default:
+		return NewUnknownTagTypeError(t.Name)
 	}
 
 	return nil
