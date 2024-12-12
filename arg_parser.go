@@ -63,6 +63,7 @@ func (pa *ArgsParser) Add(arg string) error {
 		return ErrEmptyArgument
 	}
 
+	// Special case where no flags are given but only some arguments ("foo bar")
 	if arg[0] != '-' && pa.state == ArgsStart {
 		pa.Trailing = append(pa.Trailing, arg)
 		return nil

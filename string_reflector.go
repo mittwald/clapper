@@ -1,6 +1,7 @@
 package clapper
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 )
@@ -9,7 +10,37 @@ func ptr[T any](t T) *T {
 	return &t
 }
 
+func inputNeededForKind(kind reflect.Kind) bool {
+	switch kind {
+	case reflect.Bool:
+		return false
+	default:
+		return true
+	}
+}
+
+func parseFloat(input string, bits int) (*reflect.Value, error) {
+	val, err := strconv.ParseFloat(input, bits)
+	if err != nil {
+		return nil, err
+	}
+
+	switch bits {
+	case 32:
+		val32 := float32(val)
+		return ptr(reflect.ValueOf(val32)), nil
+	case 64:
+		return ptr(reflect.ValueOf(val)), nil
+	}
+
+	return nil, NewUnsupportedReflectTypeError(fmt.Sprintf("float%d", bits))
+}
+
 func ValueFromString(fieldType reflect.Type, inputs []string) (*reflect.Value, int, error) {
+	if inputNeededForKind(fieldType.Kind()) && len(inputs) == 0 {
+		return nil, 0, ErrEmptyArgument
+	}
+
 	switch fieldType.Kind() {
 	case reflect.String:
 		return ptr(reflect.ValueOf(inputs[0])), 1, nil
@@ -17,15 +48,17 @@ func ValueFromString(fieldType reflect.Type, inputs []string) (*reflect.Value, i
 		reflect.Uint64, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		num, err := strconv.Atoi(inputs[0])
 		if err != nil {
+			err = NewUnexpectedInputFormatError(inputs[0], fieldType)
 			return nil, 0, err
 		}
 		return ptr(reflect.ValueOf(num)), 1, nil
 	case reflect.Float32, reflect.Float64:
-		val, err := strconv.ParseFloat(inputs[0], 64)
+		val, err := parseFloat(inputs[0], fieldType.Bits())
 		if err != nil {
+			err = NewUnexpectedInputFormatError(inputs[0], fieldType)
 			return nil, 0, err
 		}
-		return ptr(reflect.ValueOf(val)), 1, nil
+		return val, 1, nil
 	case reflect.Bool:
 		b := true
 		return ptr(reflect.ValueOf(b)), 0, nil

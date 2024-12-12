@@ -50,10 +50,36 @@ func (h *HelpItem) Display(formatting HelpFormatting) string {
 	return result
 }
 
+func hasInputTag(tags map[TagType]Tag) bool {
+	return hasTagType(tags, TagShort) || hasTagType(tags, TagLong)
+}
+
+func UsageHelp(tags ParsedTags) (string, bool) {
+	for _, tag := range tags {
+		if !hasTagType(tag, TagCommand) {
+			continue
+		}
+
+		helpTag, ok := tag[TagHelp]
+		if !ok {
+			// Without help tag, we can not tell anything about the command's usage.
+			break
+		}
+
+		return fmt.Sprintf("Available commands: %s", helpTag.Value), true
+	}
+
+	return "", false
+}
+
+// HelpItemFromTags creates a HelpItem from the given tags or retruns nil if the tags represent an informational tag line only.
 func HelpItemFromTags(tags map[TagType]Tag) *HelpItem {
 	invoke := ""
 	var def *string
 	var help *string
+	if !hasInputTag(tags) {
+		return nil
+	}
 	if shortTag, ok := tags[TagShort]; ok {
 		name := strings.ToLower(shortTag.Name)
 		if shortTag.HasValue() {
@@ -106,15 +132,20 @@ func Help[T any](target *T, formatter FormatterFn) (string, error) {
 		return "", err
 	}
 
+	help := ""
+	if usageHelp, ok := UsageHelp(parsedTags); ok {
+		help = usageHelp + "\n"
+	}
+
 	formatting := DefaultHelpFormatting()
 	helpItems := make([]*HelpItem, 0, len(parsedTags))
 	for _, tags := range parsedTags {
-		item := HelpItemFromTags(tags)
-		helpItems = append(helpItems, item)
-		formatting.Update(item)
+		if item := HelpItemFromTags(tags); item != nil {
+			helpItems = append(helpItems, item)
+			formatting.Update(item)
+		}
 	}
 
-	help := ""
 	for _, h := range helpItems {
 		help += formatter(h, formatting) + "\n"
 	}
