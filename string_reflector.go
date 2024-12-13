@@ -75,11 +75,10 @@ func StringReflect(field reflect.StructField, fieldValue reflect.Value, values [
 		took = len(values)
 		for i, value := range values {
 			elem := reflect.New(field.Type.Elem()).Elem()
-			refValue, tookCount, err := ValueFromString(field.Type.Elem(), []string{value})
+			refValue, _, err := ValueFromString(field.Type.Elem(), []string{value})
 			if err != nil {
 				return 0, err
 			}
-			took += tookCount
 			elem.Set(*refValue)
 			slice.Index(i).Set(elem)
 		}

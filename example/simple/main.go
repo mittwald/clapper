@@ -15,6 +15,7 @@ type Config struct {
 	Pass    *string `clapper:"short,long,help='Password will be used for authentication'"`
 }
 
+// invoke like `go run ./example/simple/main.go -- --user foo --server some-server doit`
 func main() {
 	var config Config
 	trailing, err := clapper.Parse(&config)
@@ -49,8 +50,6 @@ func main() {
 		fmt.Println("Debug mode enabled")
 	}
 
-	command := trailing[0]
-
 	fmt.Printf("Parsed config: %+v\n", config)
-	fmt.Printf("Command: %s\n", command)
+	fmt.Printf("Command: %+v\n", trailing)
 }

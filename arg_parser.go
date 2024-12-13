@@ -99,10 +99,13 @@ func (pa *ArgsParser) Add(arg string) error {
 	return nil
 }
 
-func (pa *ArgsParser) PopTrailing(took int) *ArgsParser {
-	for range took {
+func (pa *ArgsParser) PopTrailing(args ...string) *ArgsParser {
+	for _, arg := range args {
 		if len(pa.Trailing) == 0 {
 			return pa
+		}
+		if pa.Trailing[0] != arg {
+			continue
 		}
 		pa.Trailing = pa.Trailing[1:]
 	}

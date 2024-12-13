@@ -107,7 +107,7 @@ func trySetFieldConsumingArgs(field reflect.StructField, fieldValue reflect.Valu
 		// Ugly way to get rid of exfra short value
 		temp := valuesFor(TagShort, tags, args)
 		if temp != nil {
-			args.PopTrailing(1)
+			args.PopTrailing(temp...)
 		}
 	} else {
 		values = valuesFor(TagShort, tags, args)
@@ -134,7 +134,7 @@ func trySetFieldConsumingArgs(field reflect.StructField, fieldValue reflect.Valu
 		return nil
 	}
 
-	args.PopTrailing(took)
+	args.PopTrailing(values[:took]...)
 
 	return nil
 }
