@@ -7,51 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSanitizeArgs(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    []string
-		expected []string
-	}{
-		{
-			name:     "no arguments",
-			input:    []string{},
-			expected: []string{},
-		},
-		{
-			name:     "leading values",
-			input:    []string{"foo", "bar", "-d"},
-			expected: []string{"-d"},
-		},
-		{
-			name:     "combined short flags",
-			input:    []string{"-d", "-abc"},
-			expected: []string{"-d", "-a", "-b", "-c"},
-		},
-		{
-			name:     "args with values",
-			input:    []string{"-d", "hello", "--some"},
-			expected: []string{"-d", "hello", "--some"},
-		},
-		{
-			name:     "args with assigned values",
-			input:    []string{"-d=hello", "--some"},
-			expected: []string{"-d", "hello", "--some"},
-		},
-		{
-			name:     "trailing values",
-			input:    []string{"-d", "foo", "bar"},
-			expected: []string{"-d", "foo", "bar"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := sanitizeArgs(tt.input)
-			assert.ElementsMatch(t, tt.expected, got, "got unexpected sanitizeArgs result")
-		})
-	}
-}
-
 func TestArgParserExtGet(t *testing.T) {
 	tests := []struct {
 		name    string

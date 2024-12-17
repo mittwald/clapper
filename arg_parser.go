@@ -46,51 +46,12 @@ type ArgParserExt struct {
 	Args []ArgValue
 }
 
-// splitAssignmets splits an argument into its key and value if present.
-func splitAssignmets(args []string) []string {
-	result := make([]string, 0)
-	for _, arg := range args {
-		parts := strings.SplitN(arg, "=", 2)
-		for _, part := range parts {
-			result = append(result, part)
-		}
-	}
-	return result
-}
-
-// sanitizeArgs removes prefixed values and expands combined short flags as well as splits "="-assignments".
-func sanitizeArgs(args []string) []string {
-	args = splitAssignmets(args)
-	sanitized := make([]string, 0)
-	first := true
-	for _, arg := range args {
-		argType := NewArgType(arg)
-
-		// Skip any leading values as they can not be assigned to any argument.
-		if argType == ArgTypeValue && first {
-			continue
-		}
-		first = false
-
-		// Expand combined short flags (iE -abc becomes -a -b -c).
-		if argType == ArgTypeShort && len(arg) > 2 {
-			for _, c := range arg[1:] {
-				sanitized = append(sanitized, "-"+string(c))
-			}
-			continue
-		}
-
-		sanitized = append(sanitized, arg)
-	}
-	return sanitized
-}
-
 func NewArgParserExt(args []string) *ArgParserExt {
-	sanitized := sanitizeArgs(args)
+	sanitized := NewDefaultArgumentSanitizer(args)
 	ext := &ArgParserExt{
-		Args: make([]ArgValue, 0, len(sanitized)),
+		Args: make([]ArgValue, 0, len(sanitized.Get())),
 	}
-	for _, arg := range sanitized {
+	for _, arg := range sanitized.Get() {
 		argType := NewArgType(arg)
 		value := argType.Value(arg)
 		ext.Args = append(ext.Args, ArgValue{
