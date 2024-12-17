@@ -67,8 +67,10 @@ func NewTag(tag string, fieldName string, fieldIndex int) (*Tag, error) {
 	return result, result.Validate()
 }
 
-func (t *Tag) GetLookupKey() string {
-	// Overrides like long=foo-bar?
+// ArgumentName returns the name of command line argument for this tag.
+// Overrides like `long=foo-bar` are handled here.
+func (t *Tag) ArgumentName() string {
+	// If overrides like long=foo-bar exist, then use the overriden name.
 	if t.HasValue() && (t.Type == TagShort || t.Type == TagLong) {
 		return t.Value
 	}

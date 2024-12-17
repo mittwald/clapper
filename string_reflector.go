@@ -5,22 +5,11 @@ import (
 	"reflect"
 	"strconv"
 
-	internal_errors "github.com/Dirk007/clapper/internal/errors"
+	internalerrors "github.com/Dirk007/clapper/internal/errors"
 )
 
 func ptr[T any](t T) *T {
 	return &t
-}
-
-func paramName(tags map[TagType]Tag) string {
-	tag, ok := tags[TagLong]
-	if !ok {
-		tag, ok = tags[TagShort]
-		if !ok {
-			return "<unknown>"
-		}
-	}
-	return tag.Name
 }
 
 func isPointer(field reflect.StructField) bool {
@@ -38,7 +27,7 @@ func isOptionalField(field reflect.StructField) bool {
 func trySetForType(tagType TagType, field reflect.StructField, fieldValue reflect.Value, tags map[TagType]Tag, args *ArgParserExt) error {
 	key, values := valuesFor(tagType, tags, args)
 	if values == nil {
-		return internal_errors.ErrInternalNoArgumentsForTag
+		return internalerrors.ErrInternalNoArgumentsForTag
 	}
 
 	took, err := StringReflect(field, fieldValue, values)
@@ -52,13 +41,13 @@ func trySetForType(tagType TagType, field reflect.StructField, fieldValue reflec
 	return nil
 }
 
-func trySetDefault(field reflect.StructField, fieldValue reflect.Value, tags map[TagType]Tag) error {
+func trySetDefault(field reflect.StructField, fieldValue reflect.Value, tags TagMap) error {
 	tag, ok := tags[TagDefault]
 	if !ok {
 		if isOptionalField(field) {
 			return nil
 		}
-		return NewMandatoryParameterError(paramName(tags))
+		return NewMandatoryParameterError(tags.InputArgument())
 	}
 	values := []string{tag.Value}
 	_, err := StringReflect(field, fieldValue, values)
@@ -68,7 +57,7 @@ func trySetDefault(field reflect.StructField, fieldValue reflect.Value, tags map
 	return nil
 }
 
-func trySetFieldConsumingArgs(field reflect.StructField, fieldValue reflect.Value, tags map[TagType]Tag, args *ArgParserExt) error {
+func trySetFieldConsumingArgs(field reflect.StructField, fieldValue reflect.Value, tags TagMap, args *ArgParserExt) error {
 	if !fieldValue.CanSet() {
 		return ErrFieldCanNotBeSet
 	}

@@ -27,11 +27,6 @@ func NewStructFieldProcessor(target reflect.Type, value reflect.Value, tags Pars
 	}
 }
 
-func hasTagType(tags map[TagType]Tag, tagType TagType) bool {
-	_, ok := tags[tagType]
-	return ok
-}
-
 func (f *StructFieldProcessor) EOF() bool {
 	return f.currentIndex >= f.targetType.NumField()
 }
@@ -49,9 +44,9 @@ func (f *StructFieldProcessor) Next() error {
 		return nil
 	}
 
-	if hasTagType(tags, TagCommand) {
+	if tags.HasTagType(TagCommand) {
 		f.commandIndex = &index
-		if hasTagType(tags, TagHelp) {
+		if tags.HasTagType(TagHelp) {
 			f.commandHelp = tags[TagHelp].Value
 		}
 		return nil

@@ -17,14 +17,14 @@ func mustTagTypeToArgType(tagType TagType) ArgType {
 	}
 }
 
-func valuesFor(tagType TagType, tags map[TagType]Tag, args *ArgParserExt) (key string, values []string) {
+func valuesFor(tagType TagType, tags TagMap, args *ArgParserExt) (key string, values []string) {
 	tag, ok := tags[tagType]
 	if !ok {
 		return "", nil
 	}
 	argType := mustTagTypeToArgType(tag.Type)
 
-	key = tag.GetLookupKey()
+	key = tag.ArgumentName()
 
 	values, ok = args.Get(key, argType)
 	if !ok {

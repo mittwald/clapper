@@ -50,17 +50,13 @@ func (h *HelpItem) Display(formatting HelpFormatting) string {
 	return result
 }
 
-func hasInputTag(tags map[TagType]Tag) bool {
-	return hasTagType(tags, TagShort) || hasTagType(tags, TagLong)
-}
-
 func UsageHelp(tags ParsedTags) (string, bool) {
-	for _, tag := range tags {
-		if !hasTagType(tag, TagCommand) {
+	for _, tagItems := range tags {
+		if !tagItems.HasTagType(TagCommand) {
 			continue
 		}
 
-		helpTag, ok := tag[TagHelp]
+		helpTag, ok := tagItems[TagHelp]
 		if !ok {
 			// Without help tag, we can not tell anything about the command's usage.
 			break
@@ -73,11 +69,11 @@ func UsageHelp(tags ParsedTags) (string, bool) {
 }
 
 // HelpItemFromTags creates a HelpItem from the given tags or retruns nil if the tags represent an informational tag line only.
-func HelpItemFromTags(tags map[TagType]Tag) *HelpItem {
+func HelpItemFromTags(tags TagMap) *HelpItem {
 	invoke := ""
 	var def *string
 	var help *string
-	if !hasInputTag(tags) {
+	if !tags.HasInputTag() {
 		return nil
 	}
 	if shortTag, ok := tags[TagShort]; ok {
