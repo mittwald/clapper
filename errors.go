@@ -23,8 +23,6 @@ var (
 	ErrCommandCanNotHaveValue          = errors.New("command can't have a value")
 	ErrDuplicateCommandTag             = errors.New("duplicate command tag found")
 	ErrNoDefaultValue                  = errors.New("default spcified but no default value given")
-
-	errInternalNoArgumentsForTag = errors.New("no arguments for tag found")
 )
 
 // CommandRequiredError will be thrown when a command tag is required but no command is provided.
