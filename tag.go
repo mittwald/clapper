@@ -32,7 +32,7 @@ func GetTagType(tag string) (TagType, error) {
 	}
 }
 
-// Tag is one property of a struct tag.
+// Tag is one property of a struct tag (iE long, short, ...)
 type Tag struct {
 	// Type of the tag.
 	Type TagType
@@ -44,7 +44,7 @@ type Tag struct {
 	Index int
 }
 
-func NewTag(tag string, fieldName string, index int) (*Tag, error) {
+func NewTag(tag string, fieldName string, fieldIndex int) (*Tag, error) {
 	parts := strings.SplitN(tag, "=", 2)
 	var value string
 	if len(parts) == 2 {
@@ -57,7 +57,7 @@ func NewTag(tag string, fieldName string, index int) (*Tag, error) {
 	result := &Tag{
 		Type:  tagType,
 		Value: value,
-		Index: index,
+		Index: fieldIndex,
 	}
 
 	if tagType == TagShort || tagType == TagLong {
@@ -68,6 +68,7 @@ func NewTag(tag string, fieldName string, index int) (*Tag, error) {
 }
 
 func (t *Tag) GetLookupKey() string {
+	// Overrides like long=foo-bar?
 	if t.HasValue() && (t.Type == TagShort || t.Type == TagLong) {
 		return t.Value
 	}
@@ -128,28 +129,28 @@ func (t *Tag) HasValue() bool {
 func deriveLongName(fieldName string) string {
 	var name string
 
-	upperSequence := false
+	inUpperSequence := false
 	sequenceCount := 0
 	for i, char := range fieldName {
 		lower := unicode.ToLower(char)
 
-		newUpperSequence := unicode.IsUpper(char)
-		if newUpperSequence == upperSequence {
+		isUpper := unicode.IsUpper(char)
+		if isUpper == inUpperSequence {
 			sequenceCount++
 		}
 
-		if newUpperSequence != upperSequence && i > 0 {
-			if upperSequence && sequenceCount > 1 {
+		if isUpper != inUpperSequence && i > 0 {
+			if inUpperSequence && sequenceCount > 1 {
 				l := len(name) - 1
 				name = name[:l] + "-" + name[l:]
 			}
-			if !upperSequence {
+			if !inUpperSequence {
 				name += "-"
 			}
 			sequenceCount = 0
 		}
 
-		upperSequence = newUpperSequence
+		inUpperSequence = isUpper
 
 		name += string(lower)
 	}

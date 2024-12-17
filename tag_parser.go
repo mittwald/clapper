@@ -9,6 +9,8 @@ const (
 	TagName = "clapper"
 )
 
+// ParsedTags are a map of tags for each field in a struct.
+// Not each struct-field may have set a clapper tag.
 type ParsedTags = map[int]map[TagType]Tag
 
 // parseTags parses the tags for a given field (aka "one line") and returns them as a map.
