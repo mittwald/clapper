@@ -4,10 +4,72 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+
+	internalerrors "github.com/Dirk007/clapper/internal/errors"
 )
 
 func ptr[T any](t T) *T {
 	return &t
+}
+
+func isPointer(field reflect.StructField) bool {
+	return field.Type.Kind() == reflect.Ptr
+}
+
+func isBool(field reflect.StructField) bool {
+	return field.Type.Kind() == reflect.Bool
+}
+
+func isOptionalField(field reflect.StructField) bool {
+	return isPointer(field) || isBool(field)
+}
+
+func trySetForType(tagType TagType, field reflect.StructField, fieldValue reflect.Value, tags map[TagType]Tag, args *ArgParserExt) error {
+	key, values := valuesFor(tagType, tags, args)
+	if values == nil {
+		return internalerrors.ErrInternalNoArgumentsForTag
+	}
+
+	took, err := StringReflect(field, fieldValue, values)
+	if err != nil {
+		return err
+	}
+
+	argType := mustTagTypeToArgType(tagType)
+	args.Consume(key, argType, took)
+
+	return nil
+}
+
+func trySetDefault(field reflect.StructField, fieldValue reflect.Value, tags TagMap) error {
+	tag, ok := tags[TagDefault]
+	if !ok {
+		if isOptionalField(field) {
+			return nil
+		}
+		return NewMandatoryParameterError(tags.InputArgument())
+	}
+	values := []string{tag.Value}
+	_, err := StringReflect(field, fieldValue, values)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func trySetFieldConsumingArgs(field reflect.StructField, fieldValue reflect.Value, tags TagMap, args *ArgParserExt) error {
+	if !fieldValue.CanSet() {
+		return ErrFieldCanNotBeSet
+	}
+
+	shortErr := trySetForType(TagShort, field, fieldValue, tags, args)
+	longErr := trySetForType(TagLong, field, fieldValue, tags, args)
+
+	if shortErr != nil && longErr != nil {
+		return trySetDefault(field, fieldValue, tags)
+	}
+
+	return nil
 }
 
 func inputNeededForKind(kind reflect.Kind) bool {
