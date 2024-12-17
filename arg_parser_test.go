@@ -2,138 +2,150 @@ package clapper
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestArguments(t *testing.T) {
-	test := []struct {
+func TestSanitizeArgs(t *testing.T) {
+	tests := []struct {
 		name     string
-		args     []string
-		expected *ArgsParser
+		input    []string
+		expected []string
 	}{
 		{
-			name:     "no arguments at all",
-			args:     []string{},
-			expected: NewArgsParser(),
+			name:     "no arguments",
+			input:    []string{},
+			expected: []string{},
 		},
 		{
-			name: "no flags only values",
-			args: []string{"foo", "bar"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Trailing = []string{"foo", "bar"}
-			}),
+			name:     "leading values",
+			input:    []string{"foo", "bar", "-d"},
+			expected: []string{"-d"},
 		},
 		{
-			name: "combined shorts",
-			args: []string{"-fun"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Params["f"] = []string{}
-				args.Params["u"] = []string{}
-				args.Params["n"] = []string{}
-			}),
+			name:     "combined short flags",
+			input:    []string{"-d", "-abc"},
+			expected: []string{"-d", "-a", "-b", "-c"},
 		},
 		{
-			name: "multiple shorts without value",
-			args: []string{"-f", "-u", "-n"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Params["f"] = []string{}
-				args.Params["u"] = []string{}
-				args.Params["n"] = []string{}
-			}),
+			name:     "args with values",
+			input:    []string{"-d", "hello", "--some"},
+			expected: []string{"-d", "hello", "--some"},
 		},
 		{
-			name: "repeated shorts without value",
-			args: []string{"-f", "-f", "-f"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Params["f"] = []string{}
-			}),
+			name:     "args with assigned values",
+			input:    []string{"-d=hello", "--some"},
+			expected: []string{"-d", "hello", "--some"},
 		},
 		{
-			name: "multiple and combined shorts without value",
-			args: []string{"-f", "-fllloool", "-f"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Params["f"] = []string{}
-				args.Params["l"] = []string{}
-				args.Params["o"] = []string{}
-			}),
-		},
-		{
-			name: "combined repeated shorts with value binds to last flag",
-			args: []string{"-flol", "123"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Params["f"] = []string{}
-				args.Params["l"] = []string{"123"}
-				args.Params["o"] = []string{}
-				args.Trailing = []string{"123"}
-			}),
-		},
-		{
-			name: "repeated shorts with value",
-			args: []string{"-f", "1", "-f", "2", "-f", "42"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Params["f"] = []string{"1", "2", "42"}
-				args.Trailing = []string{"42"}
-			}),
-		},
-		{
-			name: "repeated shorts without value and extra value",
-			args: []string{"-f", "1", "-f", "2", "-f", "42", "extra", "value"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Params["f"] = []string{"1", "2", "42", "extra", "value"}
-				args.Trailing = []string{"42", "extra", "value"}
-			}),
-		},
-		{
-			name: "repeated long without value",
-			args: []string{"--foo", "--foo"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Params["foo"] = []string{}
-			}),
-		},
-		{
-			name: "multiple long without value",
-			args: []string{"--foo", "--bar"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Params["foo"] = []string{}
-				args.Params["bar"] = []string{}
-			}),
-		},
-		{
-			name: "repeated long with value",
-			args: []string{"--foo", "bar", "--foo", "baz"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Params["foo"] = []string{"bar", "baz"}
-				args.Trailing = []string{"baz"}
-			}),
-		},
-		{
-			name: "long with multiple values",
-			args: []string{"--foo", "bar", "baz"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Params["foo"] = []string{"bar", "baz"}
-				args.Trailing = []string{"bar", "baz"}
-			}),
-		},
-		{
-			name: "arguments with trailing flags",
-			args: []string{"hello", "world", "--foo"},
-			expected: NewArgsParser().With(func(args *ArgsParser) {
-				args.Params["foo"] = []string{}
-			}),
+			name:     "trailing values",
+			input:    []string{"-d", "foo", "bar"},
+			expected: []string{"-d", "foo", "bar"},
 		},
 	}
-
-	for _, tt := range test {
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			parser := NewArgsParser()
-
-			_, err := parser.Parse(tt.args)
-			if err != nil {
-				t.Errorf("unexpected error: %v", err)
-			}
-
-			if !parser.ValuesEqualWith(tt.expected) {
-				t.Errorf("expected %+v, got %+v", tt.expected, parser)
-			}
+			got := sanitizeArgs(tt.input)
+			assert.ElementsMatch(t, tt.expected, got, "got unexpected sanitizeArgs result")
 		})
 	}
+}
+
+func TestArgParserExtGet(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   []string
+		key     string
+		argType ArgType
+		wantOk  bool
+		want    []string
+	}{
+		{
+			name:    "single short flag without value",
+			input:   []string{"-d"},
+			key:     "d",
+			argType: ArgTypeShort,
+			wantOk:  true,
+			want:    []string{},
+		},
+		{
+			name:    "single short flag with value",
+			input:   []string{"-d", "hello"},
+			key:     "d",
+			argType: ArgTypeShort,
+			wantOk:  true,
+			want:    []string{"hello"},
+		},
+		{
+			name:    "single short flag with values",
+			input:   []string{"-d", "hello", "world", "--other"},
+			key:     "d",
+			argType: ArgTypeShort,
+			wantOk:  true,
+			want:    []string{"hello", "world"},
+		},
+		{
+			name:    "repeated short flag with value",
+			input:   []string{"-d", "hello", "--other", "-d", "world"},
+			key:     "d",
+			argType: ArgTypeShort,
+			wantOk:  true,
+			want:    []string{"hello", "world"},
+		},
+		{
+			name:    "not existing",
+			input:   []string{"-d", "hello", "--foo"},
+			key:     "bar",
+			argType: ArgTypeLong,
+			wantOk:  false,
+			want:    []string{},
+		},
+		{
+			name:    "existing long",
+			input:   []string{"-d", "hello", "--foo", "bar"},
+			key:     "foo",
+			argType: ArgTypeLong,
+			wantOk:  true,
+			want:    []string{"bar"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parser := NewArgParserExt(tt.input)
+			got, ok := parser.Get(tt.key, tt.argType)
+			require.Equal(t, tt.wantOk, ok, "got unexpected Get ok result")
+			assert.ElementsMatch(t, tt.want, got, "got unexpected Get values")
+		})
+	}
+}
+
+func TestTrailing_SingleEndValue(t *testing.T) {
+	parser := NewArgParserExt([]string{"-d", "hello", "world", "--other", "foo", "bar", "baz"})
+	got, ok := parser.Get("other", ArgTypeLong)
+	require.True(t, ok, "got unexpected Get ok result")
+	assert.Equal(t, []string{"foo", "bar", "baz"}, got)
+	parser.Consume("other", ArgTypeLong, 1)
+	assert.Equal(t, []string{"bar", "baz"}, parser.GetTrailing())
+}
+
+func TestTrailing_SliceEndValue(t *testing.T) {
+	parser := NewArgParserExt([]string{"-d", "hello", "world", "--other", "foo", "bar", "baz"})
+	got, ok := parser.Get("other", ArgTypeLong)
+	require.True(t, ok, "got unexpected Get ok result")
+	assert.Equal(t, []string{"foo", "bar", "baz"}, got)
+	parser.Consume("other", ArgTypeLong, len(got))
+	assert.Equal(t, []string{}, parser.GetTrailing())
+}
+
+func TestConsumeTrailing(t *testing.T) {
+	parser := NewArgParserExt([]string{"-d", "hello", "world", "--other", "foo", "bar", "baz"})
+	parser.ConsumeTrailing(1)
+	assert.Equal(t, []string{"bar", "baz"}, parser.GetTrailing())
+}
+
+func TestConsumeAllTrailing(t *testing.T) {
+	parser := NewArgParserExt([]string{"-d", "hello", "world", "--other", "foo", "bar", "baz"})
+	parser.ConsumeTrailing(3)
+	assert.Equal(t, []string{}, parser.GetTrailing())
 }

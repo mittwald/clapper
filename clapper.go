@@ -1,6 +1,7 @@
 package clapper
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"strings"
@@ -49,21 +50,6 @@ func parseStructTags(t reflect.Type) (ParsedTags, error) {
 	return parsedTags, nil
 }
 
-func getValues(tag Tag, args *ArgsParser) []string {
-	lookup := tag.Name
-	if tag.HasValue() {
-		lookup = tag.Value
-	}
-
-	values, ok := args.Params[lookup]
-
-	if !ok {
-		return nil
-	}
-
-	return values
-}
-
 func paramName(tags map[TagType]Tag) string {
 	tag, ok := tags[TagLong]
 	if !ok {
@@ -75,13 +61,31 @@ func paramName(tags map[TagType]Tag) string {
 	return tag.Name
 }
 
-func valuesFor(tagType TagType, tags map[TagType]Tag, args *ArgsParser) []string {
+func mustTagTypeToArgType(tagType TagType) ArgType {
+	switch tagType {
+	case TagShort:
+		return ArgTypeShort
+	case TagLong:
+		return ArgTypeLong
+	default:
+		panic(fmt.Sprintf("unknown tag type to map to arg type: %v", tagType))
+	}
+}
+
+func valuesFor(tagType TagType, tags map[TagType]Tag, args *ArgParserExt) (key string, values []string) {
 	tag, ok := tags[tagType]
 	if !ok {
-		return nil
+		return "", nil
 	}
-	values := getValues(tag, args)
-	return values
+	argType := mustTagTypeToArgType(tag.Type)
+
+	key = tag.GetLookupKey()
+
+	values, ok = args.Get(key, argType)
+	if !ok {
+		return key, nil
+	}
+	return key, values
 }
 
 func isPointer(field reflect.StructField) bool {
@@ -96,33 +100,10 @@ func isOptionalField(field reflect.StructField) bool {
 	return isPointer(field) || isBool(field)
 }
 
-func trySetFieldConsumingArgs(field reflect.StructField, fieldValue reflect.Value, tags map[TagType]Tag, args *ArgsParser) error {
-	if !fieldValue.CanSet() {
-		return ErrFieldCanNotBeSet
-	}
-
-	defaulted := false
-	values := valuesFor(TagLong, tags, args)
-	if values != nil {
-		// Ugly way to get rid of exfra short value
-		temp := valuesFor(TagShort, tags, args)
-		if temp != nil {
-			args.PopTrailing(temp...)
-		}
-	} else {
-		values = valuesFor(TagShort, tags, args)
-		if values == nil {
-			tag, ok := tags[TagDefault]
-			if !ok {
-				// Pointers and bools are optional by default
-				if isOptionalField(field) {
-					return nil
-				}
-				return NewMandatoryParameterError(paramName(tags))
-			}
-			values = []string{tag.Value}
-			defaulted = true
-		}
+func trySetForType(tagType TagType, field reflect.StructField, fieldValue reflect.Value, tags map[TagType]Tag, args *ArgParserExt) error {
+	key, values := valuesFor(tagType, tags, args)
+	if values == nil {
+		return errInternalNoArgumentsForTag
 	}
 
 	took, err := StringReflect(field, fieldValue, values)
@@ -130,11 +111,39 @@ func trySetFieldConsumingArgs(field reflect.StructField, fieldValue reflect.Valu
 		return err
 	}
 
-	if defaulted {
-		return nil
+	argType := mustTagTypeToArgType(tagType)
+	args.Consume(key, argType, took)
+
+	return nil
+}
+
+func trySetDefault(field reflect.StructField, fieldValue reflect.Value, tags map[TagType]Tag) error {
+	tag, ok := tags[TagDefault]
+	if !ok {
+		if isOptionalField(field) {
+			return nil
+		}
+		return NewMandatoryParameterError(paramName(tags))
+	}
+	values := []string{tag.Value}
+	_, err := StringReflect(field, fieldValue, values)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func trySetFieldConsumingArgs(field reflect.StructField, fieldValue reflect.Value, tags map[TagType]Tag, args *ArgParserExt) error {
+	if !fieldValue.CanSet() {
+		return ErrFieldCanNotBeSet
 	}
 
-	args.PopTrailing(values[:took]...)
+	shortErr := trySetForType(TagShort, field, fieldValue, tags, args)
+	longErr := trySetForType(TagLong, field, fieldValue, tags, args)
+
+	if shortErr != nil && longErr != nil {
+		return trySetDefault(field, fieldValue, tags)
+	}
 
 	return nil
 }
@@ -151,10 +160,7 @@ func Parse[T any](target *T, rawArgs ...string) (trailing []string, err error) {
 		rawArgs = os.Args[1:] // skip the first argument (program name)
 	}
 
-	args, err := NewArgsParser().Parse(rawArgs)
-	if err != nil {
-		return nil, err
-	}
+	args := NewArgParserExt(rawArgs)
 
 	parsedTags, err := parseStructTags(t)
 	if err != nil {

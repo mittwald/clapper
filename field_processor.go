@@ -9,13 +9,13 @@ type StructFieldProcessor struct {
 	targetType   reflect.Type
 	targetValue  reflect.Value
 	tags         ParsedTags
-	args         *ArgsParser
+	args         *ArgParserExt
 	currentIndex int
 	commandHelp  string
 	commandIndex *int
 }
 
-func NewStructFieldProcessor(target reflect.Type, value reflect.Value, tags ParsedTags, args *ArgsParser) *StructFieldProcessor {
+func NewStructFieldProcessor(target reflect.Type, value reflect.Value, tags ParsedTags, args *ArgParserExt) *StructFieldProcessor {
 	return &StructFieldProcessor{
 		targetType:   target,
 		targetValue:  value,
@@ -68,17 +68,22 @@ func (f *StructFieldProcessor) HasCommand() bool {
 }
 
 func (f *StructFieldProcessor) ProcessCommand() error {
-	if len(f.args.Trailing) == 0 {
+	trailing := f.GetTrailing()
+	if len(trailing) == 0 {
 		return NewCommandRequiredError(f.commandHelp)
 	}
 
 	field := f.targetType.Field(*f.commandIndex)
 	fieldValue := f.targetValue.Field(*f.commandIndex)
 
-	took, err := StringReflect(field, fieldValue, f.args.Trailing)
-	f.args.PopTrailing(f.args.Trailing[:took]...)
+	took, err := StringReflect(field, fieldValue, trailing)
+	if err != nil {
+		return err
+	}
 
-	return err
+	f.args.ConsumeTrailing(took)
+
+	return nil
 }
 
 func (f *StructFieldProcessor) Finalize() error {
@@ -92,5 +97,5 @@ func (f *StructFieldProcessor) Finalize() error {
 }
 
 func (f *StructFieldProcessor) GetTrailing() []string {
-	return f.args.Trailing
+	return f.args.GetTrailing()
 }

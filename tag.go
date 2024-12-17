@@ -67,6 +67,13 @@ func NewTag(tag string, fieldName string, index int) (*Tag, error) {
 	return result, result.Validate()
 }
 
+func (t *Tag) GetLookupKey() string {
+	if t.HasValue() && (t.Type == TagShort || t.Type == TagLong) {
+		return t.Value
+	}
+	return t.Name
+}
+
 func (t *Tag) validateShort() error {
 	if len(t.Name) > 1 || len(t.Value) > 1 {
 		return ErrShortOverrideCanOnlyBeOneLetter
