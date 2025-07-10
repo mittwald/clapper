@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/Dirk007/clapper"
+	"github.com/mittwald/clapper"
 )
 
 type Config struct {

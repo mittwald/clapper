@@ -12,7 +12,7 @@ A lot. Like pointer receivers (optionals), defaults, auto-help, etc. I know that
 
 **NOTE** with version 1.0.0 this package must be included like
 ```golang
-import "github.com/Dirk007/clapper"
+import "github.com/mittwald/clapper"
 ```
 
 the `pkg/clapper`-Path has been removed.

@@ -1,4 +1,4 @@
-module github.com/Dirk007/clapper
+module github.com/mittwald/clapper
 
 go 1.22
 

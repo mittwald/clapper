@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strconv"
 
-	internalerrors "github.com/Dirk007/clapper/internal/errors"
+	internalerrors "github.com/mittwald/clapper/internal/errors"
 )
 
 func ptr[T any](t T) *T {
@@ -24,7 +24,13 @@ func isOptionalField(field reflect.StructField) bool {
 	return isPointer(field) || isBool(field)
 }
 
-func trySetForType(tagType TagType, field reflect.StructField, fieldValue reflect.Value, tags map[TagType]Tag, args *ArgParserExt) error {
+func trySetForType(
+	tagType TagType,
+	field reflect.StructField,
+	fieldValue reflect.Value,
+	tags map[TagType]Tag,
+	args *ArgParserExt,
+) error {
 	key, values := valuesFor(tagType, tags, args)
 	if values == nil {
 		return internalerrors.ErrInternalNoArgumentsForTag
@@ -57,7 +63,12 @@ func trySetDefault(field reflect.StructField, fieldValue reflect.Value, tags Tag
 	return nil
 }
 
-func trySetFieldConsumingArgs(field reflect.StructField, fieldValue reflect.Value, tags TagMap, args *ArgParserExt) error {
+func trySetFieldConsumingArgs(
+	field reflect.StructField,
+	fieldValue reflect.Value,
+	tags TagMap,
+	args *ArgParserExt,
+) error {
 	if !fieldValue.CanSet() {
 		return ErrFieldCanNotBeSet
 	}

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Dirk007/clapper"
+	"github.com/mittwald/clapper"
 )
 
 type Config struct {
